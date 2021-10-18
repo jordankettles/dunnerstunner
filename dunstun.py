@@ -1,5 +1,9 @@
-import requests, time, twitter, sys, json
-from datetime import date
+import os, requests, twitter, sys, json, datetime, pytz
+
+API_KEY =  os.environ.get('API_KEY')
+API_SECRET = os.environ.get('API_SECRET')
+ACCESS_TOKEN = os.environ.get('ACCESS_TOKEN')
+ACCESS_SECRET = os.environ.get('ACCESS_SECRET')
 
 def season(some_date):
     """Returns the current season."""
@@ -31,37 +35,35 @@ def getSiteResponse():
 
     return json.loads(page.text)["threeHour"]
 
+def post_tweet(request):
+
+    api = twitter.Api(consumer_key=API_KEY, consumer_secret=API_SECRET,
+        access_token_key=ACCESS_TOKEN, access_token_secret=ACCESS_SECRET)
+
+    nz_date = datetime.datetime.now(tz=pytz.timezone("Pacific/Auckland"))
+    current_season = season(nz_date)
+    response = getSiteResponse()
+
+    if current_season == "summer":
+        base_temp = 20
+    elif current_season == "autumn":
+        base_temp = 15
+    elif current_season == "winter":
+        base_temp = 14
+    elif current_season == "spring":
+        base_temp = 15
+
+    if int(response["temp"]) >= base_temp and float(response["rainfall"]) == 0.0:
+        tweet = nz_date.ctime() + " It's a dunner stunner today! A beautiful " + response["temp"] + "° outside."
+    else:
+        tweet = nz_date.ctime() + " It's " + response["temp"] + "° outside in Dunedin today."
+
+    print("Tweeting tweet:")
+    print(tweet)
+    api.PostUpdate(tweet)
+    x = {"tweet": tweet,
+        "season": current_season}
+    return json.dumps(x)
+
 if __name__ == "__main__":
-
-    api = twitter.Api(consumer_key='blank', consumer_secret='blank',
-        access_token_key='blank', access_token_secret='blank')
-
-    # The first command line argument can be used to send a tweet.
-    if len(sys.argv) == 2:
-        tweet = sys.argv[1].strip()
-        print("Tweeting tweet:")
-        print(tweet)
-        api.PostUpdate(tweet)
-
-    while True:
-        current_season = season(date.today())
-        response = getSiteResponse()
-
-        if current_season == "summer":
-            base_temp = 20
-        elif current_season == "autumn":
-            base_temp = 15
-        elif current_season == "winter":
-            base_temp = 14
-        elif current_season == "spring":
-            base_temp = 15
-
-        if int(response["temp"]) >= base_temp and float(response["rainfall"]) == 0.0:
-            tweet = time.asctime() + " It's a dunner stunner today! A beautiful " + response["temp"] + "° outside."
-        else:
-            tweet = time.asctime() + " It's " + response["temp"] + "° outside in Dunedin today."
-
-        print("Tweeting tweet:")
-        print(tweet)
-        # api.PostUpdate(tweet)
-        time.sleep(60)
+    post_tweet({})
