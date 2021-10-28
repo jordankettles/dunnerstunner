@@ -9,9 +9,10 @@ def season(some_date):
     """Returns the current season."""
     autumn = range(80, 172) # 21 March - 20 June
     winter = range(173, 266) # 21 June - 22 September
-    spring = range(267, 256) # 23 September - 21 December
+    spring = range(267, 361) # 23 September - 21 December
     # Summer is anything else.
     day = some_date.timetuple().tm_yday
+
     if day in autumn:
         return "autumn"
     elif day in winter:
@@ -62,6 +63,9 @@ def post_tweet(request):
     print(tweet)
     api.PostUpdate(tweet)
     x = {"tweet": tweet,
+        "base_temp": base_temp,
+        "temp": response["temp"],
+        "rainfall": response["rainfall"],
         "season": current_season}
     return json.dumps(x)
 
